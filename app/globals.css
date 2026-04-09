@@ -1,0 +1,82 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  background: #f6f3ec;
+  color: #1f2937;
+}
+
+body {
+  font-family: var(--font-body), sans-serif;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+::selection {
+  background: rgba(131, 145, 132, 0.24);
+}
+
+.board-surface {
+  background-image:
+    radial-gradient(circle at top left, rgba(255,255,255,0.95), transparent 34%),
+    radial-gradient(circle at 85% 12%, rgba(223, 230, 221, 0.34), transparent 22%),
+    linear-gradient(rgba(124, 118, 107, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(124, 118, 107, 0.035) 1px, transparent 1px),
+    linear-gradient(180deg, #f8f5ee 0%, #f2eee5 100%);
+  background-size: 100% 100%, 100% 100%, 34px 34px, 34px 34px, 100% 100%;
+}
+
+.paper-panel {
+  backdrop-filter: blur(16px);
+  background: linear-gradient(180deg, rgba(255,255,255,0.7), rgba(250,248,242,0.76));
+}
+
+.topic-card::after {
+  content: "";
+  position: absolute;
+  inset: auto 22px 18px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(131,145,132,0.18), transparent);
+}
+
+.board-fade {
+  background:
+    radial-gradient(circle at 50% 50%, transparent 0%, transparent 56%, rgba(246, 243, 236, 0.56) 100%);
+}
+
+.card-halo {
+  box-shadow:
+    0 18px 45px rgba(72, 67, 57, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.68);
+}
+
+.scroll-soft {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(131,145,132,0.5) transparent;
+}
+
+.scroll-soft::-webkit-scrollbar {
+  width: 10px;
+}
+
+.scroll-soft::-webkit-scrollbar-thumb {
+  background: rgba(131,145,132,0.35);
+  border-radius: 999px;
+}
