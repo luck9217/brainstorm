@@ -146,6 +146,14 @@ export default function BoardShell({ initialTopics }) {
     );
   }
 
+  function handleMoveTopic(id, position) {
+    setTopics((current) =>
+      current.map((topic) =>
+        topic.id === id ? { ...topic, position } : topic,
+      ),
+    );
+  }
+
   function handleSelectTopic(id) {
     setSelectedTopicId(id);
   }
@@ -280,6 +288,7 @@ export default function BoardShell({ initialTopics }) {
                 }
                 isActive={topic.id === selectedTopicId}
                 onSelect={handleSelectTopic}
+                onMove={handleMoveTopic}
                 cardRef={(node) => {
                   cardRefs.current[topic.id] = node;
                 }}
