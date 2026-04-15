@@ -60,23 +60,7 @@ function ConnectionLine({ line }) {
 }
 
 export default function BoardShell({ initialTopics }) {
-  const [topics, setTopics] = useState(() => {
-    if (typeof window === "undefined") {
-      return initialTopics;
-    }
-
-    try {
-      const savedTopics = window.localStorage.getItem(TOPICS_STORAGE_KEY);
-      if (!savedTopics) {
-        return initialTopics;
-      }
-
-      const parsed = JSON.parse(savedTopics);
-      return Array.isArray(parsed) ? parsed : initialTopics;
-    } catch {
-      return initialTopics;
-    }
-  });
+  const [topics, setTopics] = useState(initialTopics);
   const [selectedTopicId, setSelectedTopicId] = useState(null);
   const [line, setLine] = useState(null);
 
@@ -89,6 +73,26 @@ export default function BoardShell({ initialTopics }) {
   );
   const selectedTopic =
     topics.find((topic) => topic.id === selectedTopicId) ?? null;
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    try {
+      const savedTopics = window.localStorage.getItem(TOPICS_STORAGE_KEY);
+      if (!savedTopics) {
+        return;
+      }
+
+      const parsed = JSON.parse(savedTopics);
+      if (Array.isArray(parsed)) {
+        setTopics(parsed);
+      }
+    } catch {
+      // Ignore invalid local storage payloads.
+    }
+  }, [initialTopics]);
 
   useEffect(() => {
     function measureLine() {

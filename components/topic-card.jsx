@@ -13,6 +13,23 @@ function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);
 }
 
+function formatShortDate(date) {
+  if (!date) {
+    return "";
+  }
+
+  const [year, month, day] = date.split("-").map(Number);
+  if (!year || !month || !day) {
+    return "";
+  }
+
+  return new Date(Date.UTC(year, month - 1, day)).toLocaleDateString("en-AU", {
+    day: "numeric",
+    month: "short",
+    timeZone: "UTC",
+  });
+}
+
 export default function TopicCard({
   topic,
   childCount,
@@ -23,21 +40,10 @@ export default function TopicCard({
 }) {
   const [isDragging, setIsDragging] = useState(false);
   const dragStateRef = useRef(null);
-  const holdTimerRef = useRef(null);
-  const pendingTouchRef = useRef(null);
   const suppressClickRef = useRef(false);
 
-  function clearHoldTimer() {
-    if (!holdTimerRef.current) {
-      return;
-    }
-
-    window.clearTimeout(holdTimerRef.current);
-    holdTimerRef.current = null;
-  }
-
   function beginDrag(target, pointerId, clientX, clientY) {
-    if (typeof window === "undefined" || window.innerWidth < 768) {
+    if (typeof window === "undefined") {
       return;
     }
 
@@ -71,37 +77,7 @@ export default function TopicCard({
   }
 
   function handlePointerDown(event) {
-    if (typeof window === "undefined" || window.innerWidth < 768) {
-      return;
-    }
-
     if (event.pointerType === "mouse" && event.button !== 0) {
-      return;
-    }
-
-    if (event.pointerType === "touch") {
-      pendingTouchRef.current = {
-        pointerId: event.pointerId,
-        startX: event.clientX,
-        startY: event.clientY,
-        target: event.currentTarget,
-      };
-
-      holdTimerRef.current = window.setTimeout(() => {
-        const pending = pendingTouchRef.current;
-        if (!pending || pending.pointerId !== event.pointerId) {
-          return;
-        }
-
-        beginDrag(
-          pending.target,
-          pending.pointerId,
-          pending.startX,
-          pending.startY,
-        );
-        pendingTouchRef.current = null;
-      }, 450);
-
       return;
     }
 
@@ -114,16 +90,6 @@ export default function TopicCard({
   }
 
   function handlePointerMove(event) {
-    const pending = pendingTouchRef.current;
-    if (pending && pending.pointerId === event.pointerId) {
-      const deltaX = Math.abs(event.clientX - pending.startX);
-      const deltaY = Math.abs(event.clientY - pending.startY);
-      if (deltaX > 10 || deltaY > 10) {
-        clearHoldTimer();
-        pendingTouchRef.current = null;
-      }
-    }
-
     const dragState = dragStateRef.current;
     if (!dragState || dragState.pointerId !== event.pointerId) {
       return;
@@ -151,9 +117,6 @@ export default function TopicCard({
   }
 
   function endPointerInteraction(event) {
-    clearHoldTimer();
-    pendingTouchRef.current = null;
-
     const dragState = dragStateRef.current;
     if (!dragState || dragState.pointerId !== event.pointerId) {
       return;
@@ -194,7 +157,7 @@ export default function TopicCard({
       onPointerUp={endPointerInteraction}
       onPointerCancel={endPointerInteraction}
       aria-pressed={isActive}
-      className={`topic-card card-halo paper-panel absolute z-10 w-[240px] select-none rounded-[28px] border border-white/60 px-5 pb-7 pt-5 text-left transition duration-300 hover:-translate-y-1.5 hover:border-white/85 focus:outline-none focus:ring-2 focus:ring-sage/30 max-md:relative max-md:left-auto max-md:top-auto max-md:w-full ${
+      className={`topic-card card-halo paper-panel absolute z-10 w-[240px] select-none rounded-[28px] border border-white/60 px-5 pb-7 pt-5 text-left transition duration-300 hover:-translate-y-1.5 hover:border-white/85 focus:outline-none focus:ring-2 focus:ring-sage/30 ${
         isDragging ? "cursor-grabbing" : "cursor-grab"
       } ${
         isActive
@@ -205,7 +168,7 @@ export default function TopicCard({
         left: `${topic.position?.x ?? 0}%`,
         top: `${topic.position?.y ?? 0}%`,
         rotate: `${topic.position?.angle ?? 0}deg`,
-        touchAction: "manipulation",
+        touchAction: "none",
       }}
     >
       <div className="mb-5 flex items-start justify-between gap-3">
@@ -215,10 +178,7 @@ export default function TopicCard({
           </p>
           {topic.dueDate ? (
             <p className="mt-2 text-[11px] uppercase tracking-[0.22em] text-sage/68">
-              {new Date(topic.dueDate).toLocaleDateString("en-AU", {
-                day: "numeric",
-                month: "short",
-              })}
+              {formatShortDate(topic.dueDate)}
             </p>
           ) : null}
         </div>

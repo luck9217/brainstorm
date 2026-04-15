@@ -5,10 +5,16 @@ function formatDate(date) {
     return "No date";
   }
 
-  return new Date(date).toLocaleDateString("en-AU", {
+  const [year, month, day] = date.split("-").map(Number);
+  if (!year || !month || !day) {
+    return "No date";
+  }
+
+  return new Date(Date.UTC(year, month - 1, day)).toLocaleDateString("en-AU", {
     day: "numeric",
     month: "long",
     year: "numeric",
+    timeZone: "UTC",
   });
 }
 
