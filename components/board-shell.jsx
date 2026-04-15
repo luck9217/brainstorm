@@ -62,6 +62,7 @@ function ConnectionLine({ line }) {
 export default function BoardShell({ initialTopics }) {
   const [topics, setTopics] = useState(initialTopics);
   const [selectedTopicId, setSelectedTopicId] = useState(null);
+  const [isCompactView, setIsCompactView] = useState(false);
   const [line, setLine] = useState(null);
 
   const cardRefs = useRef({});
@@ -269,6 +270,13 @@ export default function BoardShell({ initialTopics }) {
                 }{" "}
                 settled steps
               </span>
+              <button
+                type="button"
+                onClick={() => setIsCompactView((current) => !current)}
+                className="ml-auto rounded-full border border-sage/25 bg-white/68 px-4 py-2 text-[10px] font-semibold tracking-[0.2em] text-ink/56 transition hover:bg-white"
+              >
+                {isCompactView ? "Expand cards" : "Minimize cards"}
+              </button>
             </div>
           </div>
 
@@ -291,6 +299,7 @@ export default function BoardShell({ initialTopics }) {
                   topics.filter((entry) => entry.parentId === topic.id).length
                 }
                 isActive={topic.id === selectedTopicId}
+                isCompact={isCompactView}
                 onSelect={handleSelectTopic}
                 onMove={handleMoveTopic}
                 cardRef={(node) => {

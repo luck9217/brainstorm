@@ -34,6 +34,7 @@ export default function TopicCard({
   topic,
   childCount,
   isActive,
+  isCompact,
   onSelect,
   onMove,
   cardRef,
@@ -157,9 +158,9 @@ export default function TopicCard({
       onPointerUp={endPointerInteraction}
       onPointerCancel={endPointerInteraction}
       aria-pressed={isActive}
-      className={`topic-card card-halo paper-panel absolute z-10 w-[240px] select-none rounded-[28px] border border-white/60 px-5 pb-7 pt-5 text-left transition duration-300 hover:-translate-y-1.5 hover:border-white/85 focus:outline-none focus:ring-2 focus:ring-sage/30 ${
-        isDragging ? "cursor-grabbing" : "cursor-grab"
-      } ${
+      className={`topic-card card-halo paper-panel absolute z-10 overflow-hidden select-none rounded-[28px] border border-white/60 text-left transition duration-300 hover:-translate-y-1.5 hover:border-white/85 focus:outline-none focus:ring-2 focus:ring-sage/30 ${
+        isCompact ? "w-[208px] px-4 pb-4 pt-4" : "w-[240px] px-5 pb-7 pt-5"
+      } ${isDragging ? "cursor-grabbing" : "cursor-grab"} ${
         isActive
           ? "z-20 -translate-y-1.5 border-sage/45 bg-white/92 shadow-[0_22px_48px_rgba(72,67,57,0.12)]"
           : ""
@@ -171,9 +172,13 @@ export default function TopicCard({
         touchAction: "none",
       }}
     >
-      <div className="mb-5 flex items-start justify-between gap-3">
-        <div>
-          <p className="font-heading text-[2rem] leading-[0.95] text-ink">
+      <div
+        className={`${isCompact ? "mb-3" : "mb-5"} flex items-start justify-between gap-3`}
+      >
+        <div className="min-w-0 flex-1">
+          <p
+            className={`${isCompact ? "text-[1.55rem]" : "text-[2rem]"} break-words [overflow-wrap:anywhere] font-heading leading-[0.95] text-ink`}
+          >
             {topic.title}
           </p>
           {topic.dueDate ? (
@@ -182,15 +187,21 @@ export default function TopicCard({
             </p>
           ) : null}
         </div>
-        <span className="mt-1 h-2.5 w-2.5 rounded-full bg-sage/30" />
+        <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-sage/30" />
       </div>
 
-      <p className="max-w-[18ch] pr-6 text-[14px] leading-6 text-ink/58">
-        {topic.preview || topic.note}
-      </p>
+      {!isCompact ? (
+        <p className="max-w-[18ch] break-words [overflow-wrap:anywhere] pr-6 text-[14px] leading-6 text-ink/58">
+          {topic.preview || topic.note}
+        </p>
+      ) : null}
 
-      <div className="mt-7 flex items-center gap-3 text-[11px] uppercase tracking-[0.22em] text-ink/40">
-        <span>{topic.status || "Active"}</span>
+      <div
+        className={`${isCompact ? "mt-3" : "mt-7"} flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] uppercase tracking-[0.22em] text-ink/40`}
+      >
+        <span className="break-words [overflow-wrap:anywhere]">
+          {topic.status || "Active"}
+        </span>
         <span className="h-1 w-1 rounded-full bg-ink/20" />
         <span>{getChecklistProgress(topic.checklist)}</span>
         {childCount ? (
