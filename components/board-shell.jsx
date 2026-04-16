@@ -20,6 +20,24 @@ function createId(prefix = "topic") {
   return `${prefix}-${Math.random().toString(36).slice(2, 9)}`;
 }
 
+function collectTopicBranchIds(topics, rootId) {
+  const ids = new Set([rootId]);
+  const queue = [rootId];
+
+  while (queue.length) {
+    const currentId = queue.shift();
+
+    for (const topic of topics) {
+      if (topic.parentId === currentId && !ids.has(topic.id)) {
+        ids.add(topic.id);
+        queue.push(topic.id);
+      }
+    }
+  }
+
+  return ids;
+}
+
 function ConnectionLine({ line }) {
   if (!line) {
     return null;
@@ -329,6 +347,32 @@ export default function BoardShell({ initialTopics }) {
     setIsPanelOpen(true);
   }
 
+  function handleDeleteTopic(topicId) {
+    const topic = topics.find((entry) => entry.id === topicId);
+    if (!topic) {
+      return;
+    }
+
+    const branchIds = collectTopicBranchIds(topics, topicId);
+    const nextTopics = topics.filter((entry) => !branchIds.has(entry.id));
+
+    setTopics(nextTopics);
+
+    if (!branchIds.has(selectedTopicId)) {
+      return;
+    }
+
+    const fallbackId = topic.parentId ?? null;
+    setSelectedTopicId(fallbackId);
+
+    if (isMobileViewport) {
+      setIsPanelOpen(false);
+      return;
+    }
+
+    setIsPanelOpen(Boolean(fallbackId));
+  }
+
   return (
     <main className="board-surface min-h-screen overflow-hidden text-ink">
       <ConnectionLine line={line} />
@@ -430,6 +474,7 @@ export default function BoardShell({ initialTopics }) {
             onToggleChecklist={handleToggleChecklist}
             onAddChecklistItem={handleAddChecklistItem}
             onAddSubtopic={handleAddSubtopic}
+            onDeleteTopic={handleDeleteTopic}
           />
         </div>
       ) : null}

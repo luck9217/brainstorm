@@ -1,4 +1,8 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+
+function clamp(value, min, max) {
+  return Math.min(Math.max(value, min), max);
+}
 
 function formatDate(date) {
   if (!date) {
@@ -27,16 +31,45 @@ export default function TopicPanel({
   onToggleChecklist,
   onAddChecklistItem,
   onAddSubtopic,
+  onDeleteTopic,
 }) {
   const [checkText, setCheckText] = useState("");
   const [subtopicText, setSubtopicText] = useState("");
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [slideProgress, setSlideProgress] = useState(0);
+  const slideTrackRef = useRef(null);
+  const slideStateRef = useRef(null);
 
   const children = useMemo(
     () => topics.filter((entry) => entry.parentId === topic.id),
     [topic.id, topics],
   );
 
+  const deleteBranchCount = useMemo(() => {
+    const ids = new Set([topic.id]);
+    const queue = [topic.id];
+
+    while (queue.length) {
+      const currentId = queue.shift();
+
+      for (const entry of topics) {
+        if (entry.parentId === currentId && !ids.has(entry.id)) {
+          ids.add(entry.id);
+          queue.push(entry.id);
+        }
+      }
+    }
+
+    return ids.size;
+  }, [topic.id, topics]);
+
   const parent = topics.find((entry) => entry.id === topic.parentId);
+
+  useEffect(() => {
+    setIsDeleteConfirmOpen(false);
+    setSlideProgress(0);
+    slideStateRef.current = null;
+  }, [topic.id]);
 
   function handleChecklistSubmit(event) {
     event.preventDefault();
@@ -56,6 +89,76 @@ export default function TopicPanel({
     }
     onAddSubtopic(topic.id, value);
     setSubtopicText("");
+  }
+
+  function handleSlideStart(event) {
+    if (event.pointerType === "mouse" && event.button !== 0) {
+      return;
+    }
+
+    const trackNode = slideTrackRef.current;
+    if (!trackNode) {
+      return;
+    }
+
+    const trackRect = trackNode.getBoundingClientRect();
+    const thumbWidth = 46;
+    const maxOffset = Math.max(trackRect.width - thumbWidth, 1);
+
+    try {
+      event.currentTarget.setPointerCapture(event.pointerId);
+    } catch {
+      // Ignore environments where pointer capture is unavailable.
+    }
+
+    slideStateRef.current = {
+      pointerId: event.pointerId,
+      pointerStartX: event.clientX,
+      startProgress: slideProgress,
+      maxOffset,
+    };
+  }
+
+  function handleSlideMove(event) {
+    const slideState = slideStateRef.current;
+    if (!slideState || slideState.pointerId !== event.pointerId) {
+      return;
+    }
+
+    event.preventDefault();
+
+    const deltaX = event.clientX - slideState.pointerStartX;
+    const nextProgress = clamp(
+      slideState.startProgress + deltaX / slideState.maxOffset,
+      0,
+      1,
+    );
+
+    setSlideProgress(nextProgress);
+  }
+
+  function handleSlideEnd(event) {
+    const slideState = slideStateRef.current;
+    if (!slideState || slideState.pointerId !== event.pointerId) {
+      return;
+    }
+
+    try {
+      if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+        event.currentTarget.releasePointerCapture(event.pointerId);
+      }
+    } catch {
+      // Ignore environments where pointer capture is unavailable.
+    }
+
+    slideStateRef.current = null;
+
+    if (slideProgress >= 0.9) {
+      onDeleteTopic(topic.id);
+      return;
+    }
+
+    setSlideProgress(0);
   }
 
   return (
@@ -239,6 +342,64 @@ export default function TopicPanel({
               Nest
             </button>
           </form>
+        </section>
+
+        <section className="space-y-3 border-t border-white/40 pt-5">
+          <div className="flex items-center justify-between">
+            <p className="text-xs uppercase tracking-[0.28em] text-sage/62">
+              Danger zone
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setIsDeleteConfirmOpen((current) => !current);
+                setSlideProgress(0);
+              }}
+              className="rounded-full border border-rose-300/55 bg-rose-50/70 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-rose-700/88 transition hover:bg-rose-50"
+            >
+              Delete card
+            </button>
+          </div>
+
+          {isDeleteConfirmOpen ? (
+            <div className="rounded-[24px] border border-rose-200/55 bg-rose-50/45 p-4">
+              <p className="text-sm leading-6 text-ink/72">
+                Slide to remove this card
+                {deleteBranchCount > 1
+                  ? ` and ${deleteBranchCount - 1} linked subtopic${deleteBranchCount - 1 > 1 ? "s" : ""}`
+                  : ""}
+                .
+              </p>
+
+              <div
+                ref={slideTrackRef}
+                className="relative mt-4 h-12 overflow-hidden rounded-full border border-rose-200/65 bg-white/75"
+              >
+                <div
+                  className="absolute inset-y-0 left-0 rounded-full bg-rose-200/65"
+                  style={{ width: `${Math.max(slideProgress * 100, 14)}%` }}
+                />
+                <div className="pointer-events-none absolute inset-0 flex items-center justify-center text-[11px] font-semibold uppercase tracking-[0.16em] text-rose-700/74">
+                  Slide right to delete
+                </div>
+                <button
+                  type="button"
+                  onPointerDown={handleSlideStart}
+                  onPointerMove={handleSlideMove}
+                  onPointerUp={handleSlideEnd}
+                  onPointerCancel={handleSlideEnd}
+                  className="absolute top-0 h-12 w-[46px] rounded-full border border-rose-300/70 bg-white text-xl text-rose-700/90 shadow-[0_8px_18px_rgba(161,70,70,0.2)]"
+                  style={{
+                    left: `calc(${slideProgress * 100}% - ${slideProgress * 46}px)`,
+                    touchAction: "none",
+                  }}
+                  aria-label="Slide right to confirm deleting this card"
+                >
+                  ▸
+                </button>
+              </div>
+            </div>
+          ) : null}
         </section>
       </div>
     </aside>
