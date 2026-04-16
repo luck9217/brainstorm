@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import QuickCapture from "@/components/quick-capture";
 import TopicCard from "@/components/topic-card";
 import TopicPanel from "@/components/topic-panel";
 
-const TOPICS_STORAGE_KEY = "brainstorm-space-topics-v1";
+const TOPICS_STORAGE_KEY = "brainstorm-space-topics-v3";
 
 const ROOT_POSITIONS = [
   { x: 11, y: 16, angle: -2 },
@@ -135,15 +136,10 @@ export default function BoardShell({ initialTopics }) {
   }, []);
 
   useEffect(() => {
-    if (isMobileViewport) {
+    if (!selectedTopicId) {
       setIsPanelOpen(false);
-      return;
     }
-
-    if (selectedTopicId) {
-      setIsPanelOpen(true);
-    }
-  }, [isMobileViewport, selectedTopicId]);
+  }, [selectedTopicId]);
 
   useEffect(() => {
     function measureLine() {
@@ -261,13 +257,7 @@ export default function BoardShell({ initialTopics }) {
 
     bringTopicToFront(id);
     setSelectedTopicId(id);
-
-    if (isMobileViewport) {
-      setIsPanelOpen(openPanel);
-      return;
-    }
-
-    setIsPanelOpen(true);
+    setIsPanelOpen(openPanel);
   }
 
   function handleCreateTopic({ title, note }) {
@@ -405,10 +395,16 @@ export default function BoardShell({ initialTopics }) {
                 }{" "}
                 settled steps
               </span>
+              <Link
+                href="/about"
+                className="ml-auto rounded-full border border-sage/25 bg-white/68 px-4 py-2 text-[10px] font-semibold tracking-[0.2em] text-ink/56 transition hover:bg-white"
+              >
+                About resume
+              </Link>
               <button
                 type="button"
                 onClick={() => setIsCompactView((current) => !current)}
-                className="ml-auto rounded-full border border-sage/25 bg-white/68 px-4 py-2 text-[10px] font-semibold tracking-[0.2em] text-ink/56 transition hover:bg-white"
+                className="rounded-full border border-sage/25 bg-white/68 px-4 py-2 text-[10px] font-semibold tracking-[0.2em] text-ink/56 transition hover:bg-white"
               >
                 {isCompactView ? "Expand cards" : "Minimize cards"}
               </button>
@@ -445,11 +441,11 @@ export default function BoardShell({ initialTopics }) {
             ))}
           </div>
 
-          {selectedTopic && isMobileViewport && !isPanelOpen ? (
+          {selectedTopic && !isPanelOpen ? (
             <button
               type="button"
               onClick={() => setIsPanelOpen(true)}
-              className="fixed bottom-4 right-4 z-30 rounded-full bg-ink px-5 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-white shadow-[0_18px_34px_rgba(44,41,35,0.26)] md:hidden"
+              className="fixed bottom-4 right-4 z-30 rounded-full bg-ink px-5 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-white shadow-[0_18px_34px_rgba(44,41,35,0.26)]"
             >
               Open thread
             </button>
@@ -457,18 +453,12 @@ export default function BoardShell({ initialTopics }) {
         </section>
       </div>
 
-      {selectedTopic && (isPanelOpen || !isMobileViewport) ? (
+      {selectedTopic && isPanelOpen ? (
         <div ref={panelAnchorRef}>
           <TopicPanel
             topic={selectedTopic}
             topics={topics}
-            onClose={() => {
-              setIsPanelOpen(false);
-
-              if (!isMobileViewport) {
-                setSelectedTopicId(null);
-              }
-            }}
+            onClose={() => setIsPanelOpen(false)}
             onUpdateTopic={updateTopic}
             onSelectTopic={handleSelectTopic}
             onToggleChecklist={handleToggleChecklist}
