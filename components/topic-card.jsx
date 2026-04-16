@@ -32,6 +32,7 @@ function formatShortDate(date) {
 
 export default function TopicCard({
   topic,
+  zIndex,
   childCount,
   isActive,
   isCompact,
@@ -81,6 +82,8 @@ export default function TopicCard({
     if (event.pointerType === "mouse" && event.button !== 0) {
       return;
     }
+
+    onSelect(topic.id, { openPanel: false });
 
     beginDrag(
       event.currentTarget,
@@ -145,7 +148,7 @@ export default function TopicCard({
       return;
     }
 
-    onSelect(topic.id);
+    onSelect(topic.id, { openPanel: false });
   }
 
   return (
@@ -158,16 +161,17 @@ export default function TopicCard({
       onPointerUp={endPointerInteraction}
       onPointerCancel={endPointerInteraction}
       aria-pressed={isActive}
-      className={`topic-card card-halo paper-panel absolute z-10 overflow-hidden select-none rounded-[28px] border border-white/60 text-left transition duration-300 hover:-translate-y-1.5 hover:border-white/85 focus:outline-none focus:ring-2 focus:ring-sage/30 ${
+      className={`topic-card card-halo paper-panel absolute overflow-hidden select-none rounded-[28px] border border-white/60 text-left transition duration-300 hover:-translate-y-1.5 hover:border-white/85 focus:outline-none focus:ring-2 focus:ring-sage/30 ${
         isCompact ? "w-[208px] px-4 pb-4 pt-4" : "w-[240px] px-5 pb-7 pt-5"
       } ${isDragging ? "cursor-grabbing" : "cursor-grab"} ${
         isActive
-          ? "z-20 -translate-y-1.5 border-sage/45 bg-white/92 shadow-[0_22px_48px_rgba(72,67,57,0.12)]"
+          ? "-translate-y-1.5 border-sage/45 bg-white/92 shadow-[0_22px_48px_rgba(72,67,57,0.12)]"
           : ""
       }`}
       style={{
         left: `${topic.position?.x ?? 0}%`,
         top: `${topic.position?.y ?? 0}%`,
+        zIndex,
         rotate: `${topic.position?.angle ?? 0}deg`,
         touchAction: "none",
       }}

@@ -62,11 +62,15 @@ function ConnectionLine({ line }) {
 export default function BoardShell({ initialTopics }) {
   const [topics, setTopics] = useState(initialTopics);
   const [selectedTopicId, setSelectedTopicId] = useState(null);
+  const [cardZOrder, setCardZOrder] = useState({});
+  const [isMobileViewport, setIsMobileViewport] = useState(false);
+  const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [isCompactView, setIsCompactView] = useState(false);
   const [line, setLine] = useState(null);
 
   const cardRefs = useRef({});
   const panelAnchorRef = useRef(null);
+  const highestZRef = useRef(0);
 
   const rootTopics = useMemo(
     () => topics.filter((topic) => topic.parentId === null),
@@ -94,6 +98,34 @@ export default function BoardShell({ initialTopics }) {
       // Ignore invalid local storage payloads.
     }
   }, [initialTopics]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    function updateViewport() {
+      setIsMobileViewport(window.innerWidth < 768);
+    }
+
+    updateViewport();
+    window.addEventListener("resize", updateViewport);
+
+    return () => {
+      window.removeEventListener("resize", updateViewport);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (isMobileViewport) {
+      setIsPanelOpen(false);
+      return;
+    }
+
+    if (selectedTopicId) {
+      setIsPanelOpen(true);
+    }
+  }, [isMobileViewport, selectedTopicId]);
 
   useEffect(() => {
     function measureLine() {
@@ -143,6 +175,53 @@ export default function BoardShell({ initialTopics }) {
     window.localStorage.setItem(TOPICS_STORAGE_KEY, JSON.stringify(topics));
   }, [topics]);
 
+  useEffect(() => {
+    setCardZOrder((current) => {
+      const nextOrder = { ...current };
+      let changed = false;
+
+      for (const topic of topics) {
+        if (nextOrder[topic.id] == null) {
+          highestZRef.current += 1;
+          nextOrder[topic.id] = highestZRef.current;
+          changed = true;
+        }
+      }
+
+      for (const topicId of Object.keys(nextOrder)) {
+        if (!topics.some((topic) => topic.id === topicId)) {
+          delete nextOrder[topicId];
+          changed = true;
+        }
+      }
+
+      return changed ? nextOrder : current;
+    });
+  }, [topics]);
+
+  function bringTopicToFront(id) {
+    setCardZOrder((current) => {
+      const currentZ = current[id] ?? 0;
+      const highestZ = Object.values(current).reduce(
+        (max, value) => (value > max ? value : max),
+        0,
+      );
+
+      if (currentZ >= highestZ) {
+        highestZRef.current = highestZ;
+        return current;
+      }
+
+      const nextZ = highestZ + 1;
+      highestZRef.current = nextZ;
+
+      return {
+        ...current,
+        [id]: nextZ,
+      };
+    });
+  }
+
   function updateTopic(id, patch) {
     setTopics((current) =>
       current.map((topic) =>
@@ -159,8 +238,18 @@ export default function BoardShell({ initialTopics }) {
     );
   }
 
-  function handleSelectTopic(id) {
+  function handleSelectTopic(id, options = {}) {
+    const { openPanel = true } = options;
+
+    bringTopicToFront(id);
     setSelectedTopicId(id);
+
+    if (isMobileViewport) {
+      setIsPanelOpen(openPanel);
+      return;
+    }
+
+    setIsPanelOpen(true);
   }
 
   function handleCreateTopic({ title, note }) {
@@ -185,6 +274,7 @@ export default function BoardShell({ initialTopics }) {
 
     setTopics((current) => [...current, newTopic]);
     setSelectedTopicId(newTopic.id);
+    setIsPanelOpen(true);
   }
 
   function handleToggleChecklist(topicId, itemId) {
@@ -236,6 +326,7 @@ export default function BoardShell({ initialTopics }) {
 
     setTopics((current) => [...current, newSubtopic]);
     setSelectedTopicId(newSubtopic.id);
+    setIsPanelOpen(true);
   }
 
   return (
@@ -295,6 +386,7 @@ export default function BoardShell({ initialTopics }) {
               <TopicCard
                 key={topic.id}
                 topic={topic}
+                zIndex={cardZOrder[topic.id] ?? 1}
                 childCount={
                   topics.filter((entry) => entry.parentId === topic.id).length
                 }
@@ -308,15 +400,31 @@ export default function BoardShell({ initialTopics }) {
               />
             ))}
           </div>
+
+          {selectedTopic && isMobileViewport && !isPanelOpen ? (
+            <button
+              type="button"
+              onClick={() => setIsPanelOpen(true)}
+              className="fixed bottom-4 right-4 z-30 rounded-full bg-ink px-5 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-white shadow-[0_18px_34px_rgba(44,41,35,0.26)] md:hidden"
+            >
+              Open thread
+            </button>
+          ) : null}
         </section>
       </div>
 
-      {selectedTopic ? (
+      {selectedTopic && (isPanelOpen || !isMobileViewport) ? (
         <div ref={panelAnchorRef}>
           <TopicPanel
             topic={selectedTopic}
             topics={topics}
-            onClose={() => setSelectedTopicId(null)}
+            onClose={() => {
+              setIsPanelOpen(false);
+
+              if (!isMobileViewport) {
+                setSelectedTopicId(null);
+              }
+            }}
             onUpdateTopic={updateTopic}
             onSelectTopic={handleSelectTopic}
             onToggleChecklist={handleToggleChecklist}
