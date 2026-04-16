@@ -197,9 +197,9 @@ export default function TopicPanel({
 
       <div className="scroll-soft flex-1 space-y-7 overflow-y-auto px-7 pb-7 pt-2">
         <section>
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <p className="font-heading text-5xl leading-[0.94] text-ink">
+          <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between md:gap-5">
+            <div className="min-w-0">
+              <p className="font-heading text-[clamp(2.2rem,9vw,3rem)] leading-[0.94] text-ink break-words [overflow-wrap:anywhere]">
                 {topic.title}
               </p>
               <p className="mt-4 text-sm text-ink/50">
@@ -212,7 +212,7 @@ export default function TopicPanel({
               onChange={(event) =>
                 onUpdateTopic(topic.id, { status: event.target.value })
               }
-              className="rounded-full border border-transparent bg-white/62 px-4 py-2 text-sm text-ink/60 outline-none focus:border-sage/30"
+              className="w-full rounded-full border border-transparent bg-white/62 px-4 py-2 text-sm text-ink/60 outline-none focus:border-sage/30 md:w-auto md:min-w-[170px]"
             >
               <option>Active</option>
               <option>In review</option>

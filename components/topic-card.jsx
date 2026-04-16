@@ -203,7 +203,7 @@ export default function TopicCard({
       <div
         className={`${isCompact ? "mt-3" : "mt-7"} flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] uppercase tracking-[0.22em] text-ink/40`}
       >
-        <span className="break-words [overflow-wrap:anywhere]">
+        <span className="w-full break-words text-[10px] leading-4 tracking-[0.18em] [overflow-wrap:anywhere]">
           {topic.status || "Active"}
         </span>
         <span className="h-1 w-1 rounded-full bg-ink/20" />
